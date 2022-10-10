@@ -33,29 +33,8 @@ module.exports = {
     defaultNetwork: "hardhat",
     networks: {
 		hardhat: {
-			// chainId: 1337, // Ethereum (alternate / frontend testing)
 			forking: {
-				// url: `${process.env.ARBITRUM_NETWORK_ENDPOINT}`, // Arbitrum
-				// url: `${process.env.AURORA_NETWORK_ENDPOINT}`, // Aurora
-				// url: `${process.env.AVALANCHE_FORKING_NETWORK_ENDPOINT}`, // Avalanche
-				// url: `${process.env.BOBA_NETWORK_ENDPOINT}`, // Boba
-				// url: `${process.env.BSC_NETWORK_ENDPOINT}`, // BSC
 				url: `${process.env.ETHEREUM_NETWORK_ENDPOINT}`, // Ethereum
-				// url: `${process.env.EVMOS_NETWORK_ENDPOINT}`, // Evmos
-				// url: `${process.env.FANTOM_FORKING_NETWORK_ENDPOINT}`, // Fantom
-				// url: `${process.env.FUSE_NETWORK_ENDPOINT}`, // Fuse
-				// url: `${process.env.HARMONY_NETWORK_ENDPOINT}`, // Harmony
-				// url: `${process.env.MOONBEAM_NETWORK_ENDPOINT}`, // Moonbeam
-				// url: `${process.env.MOONRIVER_NETWORK_ENDPOINT}`, // Moonriver
-				// url: `${process.env.OPTIMISM_NETWORK_ENDPOINT}`, // Optimism
-				// url: `${process.env.POLYGON_NETWORK_ENDPOINT}`, // Polygon
-				// url: `${process.env.ZKSYNC_NETWORK_ENDPOINT}`, // zkSync
-
-				// TESTING (npx hardhat node --hostname 0.0.0.0)
-				// Also see src/hardhat/justin-scripts/instructions.txt
-				// url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`, // Ethereum (alternate)
-				// blockNumber: 14806990 // Ethereum (alternate)
-				
 			},
 			accounts: {
 				mnemonic: process.env.ROPSTEN_HARDHAT_PHRASE
