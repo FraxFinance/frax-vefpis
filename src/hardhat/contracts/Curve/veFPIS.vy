@@ -596,8 +596,7 @@ def _deposit_for(_staker_addr: address, _payer_addr: address, _value: uint256, u
     """
 
     # Pull in the tokens first before modifying state
-    if _value != 0:
-        assert ERC20(self.token).transferFrom(_payer_addr, self, _value)
+    assert ERC20(self.token).transferFrom(_payer_addr, self, _value)
 
     # Note original data
     old_locked: LockedBalance = locked_balance
@@ -765,8 +764,7 @@ def proxy_pbk_liq_slsh(
         # _staker_addr, _payer_addr, _value, unlock_time, locked_balance, type
         # self._deposit_for(_staker_addr, msg.sender, _payback_amt, _locked.end, _locked, PROXY_PAYBACK)
         # self._deposit_for(_staker_addr, msg.sender, _payback_amt, 0, _locked, PROXY_PAYBACK)
-        if _payback_amt != 0:
-            assert ERC20(self.token).transferFrom(msg.sender, self, _payback_amt)
+        assert ERC20(self.token).transferFrom(msg.sender, self, _payback_amt)
 
         # Checkpoint
         # Amount doesn't change
@@ -777,7 +775,6 @@ def proxy_pbk_liq_slsh(
 
         # Refresh the locked and proxy balances
         _locked = self.locked[_staker_addr]
-        _proxy_balance = self.user_fpis_in_proxy[_staker_addr]
 
     # Handle a liquidation (proxy takes FPIS from the user's veFPIS position)
     if (_liquidation_fee_amt > 0 or _liquidation_amt > 0): 
