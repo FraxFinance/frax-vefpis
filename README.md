@@ -1,6 +1,6 @@
 # veFPIS
 ## Flowchart
-![veFPIS Flowchart](flowchart.svg)
+![veFPIS Flowchart](veFPIS.svg)
 ## Overview Documentation
 [https://docs.frax.finance/frax-price-index/vefpis](https://docs.frax.finance/frax-price-index/vefpis).
 
