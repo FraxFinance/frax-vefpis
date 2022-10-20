@@ -24,8 +24,8 @@
 1) Deploy FPIS.sol
 2) Deploy veFPIS.vy
 
-#### Combined deploy script
-
+#### veFXS deploy script
+npx hardhat run --network ethereum scripts/deploys/deploy_veFPIS.js
 
 #### Etherscan Verification
 Copy & paste the entire .vy file. Etherscan should support it

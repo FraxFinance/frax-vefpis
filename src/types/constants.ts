@@ -16,6 +16,9 @@ export function omit(key, obj) {
 export const CONTRACT_ADDRESSES = {
   ethereum: {
     chain_id: 1,
+    main: {
+      veFPIS: "0x1B0b9991Df27a4F2847478127d51Fb29883882f5",
+    },
     canonicals: {
       FPIS: "0xc2544A32872A91F4A553b404C6950e89De901fdb",
     },

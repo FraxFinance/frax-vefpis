@@ -251,7 +251,7 @@ def apply_transfer_ownership():
     """
     assert msg.sender == self.admin  # dev: admin only
     _admin: address = self.future_admin
-    assert _admin != ZERO_ADDRESS  # dev: admin not set
+    assert _admin != empty(address)  # dev: admin not set
     self.admin = _admin
     log ApplyOwnership(_admin)
 
@@ -295,7 +295,7 @@ def assert_not_contract(addr: address):
     """
     if addr != tx.origin:
         checker: address = self.smart_wallet_checker
-        if checker != ZERO_ADDRESS:
+        if checker != empty(address):
             if SmartWalletChecker(checker).check(addr):
                 return
         raise "Smart contract depositors not allowed"
@@ -410,7 +410,7 @@ def _checkpoint(addr: address, old_locked: LockedBalance, new_locked: LockedBala
     # Also note previous global slope and point
     # ////////////////////////////////////////////////////////////////////////////
     # Skip if a user isn't being checkpointed
-    if addr != ZERO_ADDRESS:
+    if addr != empty(address):
         # Calculate slopes and biases
         # Kept at zero when they have to
 
@@ -514,7 +514,7 @@ def _checkpoint(addr: address, old_locked: LockedBalance, new_locked: LockedBala
     # Handle some special cases
     # ////////////////////////////////////////////////////////////////////////////
     # Skip if a user isn't being checkpointed
-    if addr != ZERO_ADDRESS:
+    if addr != empty(address):
         # If last point was in this block, the slope change has been applied already
         # But in such case we have 0 slope(s)
         last_point.slope += (usr_new_pt.slope - usr_old_pt.slope)
@@ -556,7 +556,7 @@ def _checkpoint(addr: address, old_locked: LockedBalance, new_locked: LockedBala
     # Handle global slope changes and user point historical info
     # ////////////////////////////////////////////////////////////////////////////
     # Skip if a user isn't being checkpointed
-    if addr != ZERO_ADDRESS:
+    if addr != empty(address):
         # Schedule the slope changes (slope is going down)
         # We subtract new_user_slope from [new_locked.end]
         # and add old_user_slope to [old_locked.end]
@@ -629,7 +629,7 @@ def checkpoint():
     """
     @notice Record global data to checkpoint
     """
-    self._checkpoint(ZERO_ADDRESS, empty(LockedBalance), empty(LockedBalance), 0)
+    self._checkpoint(empty(address), empty(LockedBalance), empty(LockedBalance), 0)
 
 
 @external
@@ -1079,7 +1079,7 @@ def toggleEmergencyUnlock():
     """
     assert msg.sender == self.admin  # dev: admin only
     self.emergencyUnlockActive = not (self.emergencyUnlockActive)
-    self._checkpoint(ZERO_ADDRESS, empty(LockedBalance), empty(LockedBalance), 0)
+    self._checkpoint(empty(address), empty(LockedBalance), empty(LockedBalance), 0)
 
     log EmergencyUnlockToggled(self.emergencyUnlockActive)
 
@@ -1090,7 +1090,7 @@ def toggleProxyTransferTos():
     """
     assert msg.sender == self.admin  # dev: admin only
     self.proxyTransferTosEnabled = not (self.proxyTransferTosEnabled)
-    self._checkpoint(ZERO_ADDRESS, empty(LockedBalance), empty(LockedBalance), 0)
+    self._checkpoint(empty(address), empty(LockedBalance), empty(LockedBalance), 0)
 
     log ProxyTransferTosToggled(self.proxyTransferTosEnabled)
 
@@ -1101,7 +1101,7 @@ def toggleProxyPaybackLiqOrSlashs():
     """
     assert msg.sender == self.admin  # dev: admin only
     self.ProxyPaybackLiqOrSlashsEnabled = not (self.ProxyPaybackLiqOrSlashsEnabled)
-    self._checkpoint(ZERO_ADDRESS, empty(LockedBalance), empty(LockedBalance), 0)
+    self._checkpoint(empty(address), empty(LockedBalance), empty(LockedBalance), 0)
 
     log ProxyPaybackLiqOrSlashsToggled(self.ProxyPaybackLiqOrSlashsEnabled)
 
@@ -1138,7 +1138,7 @@ def stakerSetProxy(_proxy: address):
     @param _proxy The address the staker will let withdraw/deposit for them 
     """
     # Do some checks
-    assert (_proxy == ZERO_ADDRESS or self.lending_proxy == _proxy), "Proxy not whitelisted [admin level]"
+    assert (_proxy == empty(address) or self.lending_proxy == _proxy), "Proxy not whitelisted [admin level]"
     assert (self.user_fpis_in_proxy[msg.sender] == 0), "Outstanding FPIS in proxy. Have proxy use proxy_pbk_liq_slsh"
 
     # Set the proxy
