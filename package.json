@@ -1,5 +1,5 @@
 {
-  "name": "frax-contracts-dev",
+  "name": "frax-vefpis",
   "version": "1.0.0",
   "description": "Frax Finance smart contracts and testing",
   "main": "src/index.js",
