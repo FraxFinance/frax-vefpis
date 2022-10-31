@@ -48,7 +48,8 @@ contract('veFPIS Tests', async (accounts) => {
 	let STAKING_OWNER;
 	let STAKING_REWARDS_DISTRIBUTOR;
 	let INVESTOR_CUSTODIAN_ADDRESS;
-	const ADDRESS_WITH_FPIS = '0x88e863d4572d2dae27db81e98837a9dbeb0e7a12';
+	const ADDRESS_WITH_FPIS = '0x1e84614543Ab707089CebB022122503462AC51b3';
+	const ADDRESS_WITH_ETHER = '0xF977814e90dA44bFA03b6295A0616a897441aceC';
 
 	// Initialize core contract instances
 	let fpis_instance;
@@ -93,16 +94,20 @@ contract('veFPIS Tests', async (accounts) => {
 	// ================================================================
 	it('Initialization', async () => {
 
+		// Give ether to ADDRESS_WITH_FPIS
+		const etherWhale = await hre.ethers.getImpersonatedSigner(ADDRESS_WITH_ETHER);
+		await etherWhale.sendTransaction({ to: ADDRESS_WITH_FPIS, value: ethers.utils.parseEther("25.0") });
+
 		await hre.network.provider.request({
 			method: "hardhat_impersonateAccount",
 			params: [ADDRESS_WITH_FPIS]}
 		);
 
 		// Give some addresses some FPIS
-		await fpis_instance.transfer(STAKING_OWNER, new BigNumber("100000e18"), { from: ADDRESS_WITH_FPIS });
-		await fpis_instance.transfer(COLLATERAL_FRAX_AND_FXS_OWNER, new BigNumber("100000e18"), { from: ADDRESS_WITH_FPIS });
-		await fpis_instance.transfer(INVESTOR_CUSTODIAN_ADDRESS, new BigNumber("100000e18"), { from: ADDRESS_WITH_FPIS });
-		await fpis_instance.transfer(GOVERNOR_GUARDIAN_ADDRESS, new BigNumber("1000e18"), { from: ADDRESS_WITH_FPIS });
+		await fpis_instance.transfer(STAKING_OWNER, new BigNumber("10000e18"), { from: ADDRESS_WITH_FPIS });
+		await fpis_instance.transfer(COLLATERAL_FRAX_AND_FXS_OWNER, new BigNumber("10000e18"), { from: ADDRESS_WITH_FPIS });
+		await fpis_instance.transfer(INVESTOR_CUSTODIAN_ADDRESS, new BigNumber("10000e18"), { from: ADDRESS_WITH_FPIS });
+		// await fpis_instance.transfer(GOVERNOR_GUARDIAN_ADDRESS, new BigNumber("1000e18"), { from: ADDRESS_WITH_FPIS });
 		await fpis_instance.transfer(STAKING_REWARDS_DISTRIBUTOR, new BigNumber("1000e18"), { from: ADDRESS_WITH_FPIS });
 
 		await hre.network.provider.request({
@@ -128,8 +133,8 @@ contract('veFPIS Tests', async (accounts) => {
 		console.log(chalk.hex("#ff8b3d").bold("=====================QUICK 4 YEAR TEST [NO INCREASES]====================="));
 
 		// Create a new veFPIS table
-		const head_col_titles = ['Month', 'User FPIS', 'User veFPIS', 'User Slope', 'User Bias', 'Ttl FPIS', 'Ttl veFPIS', 'Ttl Slope', 'Ttl Bias', 'Ttl fpis_amt', 'Pxy Brw', 'FPIS Ctc BlOf'];
-		const head_col_widths = [8, 15, 15, 15, 15, 12, 15, 15, 15, 15, 9, 15];
+		const head_col_titles = ['Month', 'User FPIS', 'User veFPIS', 'User Slope', 'User Bias', 'Ttl FPIS', 'Ttl veFPIS', 'Ttl Slope', 'Ttl Bias', 'Ttl fpis_amt', 'Pxy Brw', 'veFPIS BlOf FPIS', 'Pxy BlOf FPIS'];
+		const head_col_widths = [8, 15, 15, 15, 15, 12, 15, 15, 15, 15, 9, 18, 15];
 		const veFPIS_table_4_years = new Table({
 			head: head_col_titles, 
 			colWidths: head_col_widths
@@ -158,7 +163,7 @@ contract('veFPIS Tests', async (accounts) => {
 			}
 
 			if (j == (49)) {
-				veFPIS_table_4_years.push(["-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY"]);
+				veFPIS_table_4_years.push(["-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-"]);
 			}
 
 			// Withdraw at the end
@@ -170,7 +175,7 @@ contract('veFPIS Tests', async (accounts) => {
 				// Withdraw
 				await veFPIS_instance.withdraw({ from: STAKING_OWNER });
 				await veFPIS_instance.checkpoint();
-				veFPIS_table_4_years.push(["-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL"]);
+				veFPIS_table_4_years.push(["-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-"]);
 			
 				// Print contract FPIS balance
 				const FPIS_bal_contract_after = parseFloat(new BigNumber(await fpis_instance.balanceOf(veFPIS_instance.address)).div(BIG18).toNumber().toFixed(4));
@@ -190,7 +195,8 @@ contract('veFPIS Tests', async (accounts) => {
 			const fpis_amt_mid_ttl = parseFloat(new BigNumber(last_point_ttl.fpis_amt).div(BIG18).toNumber().toFixed(4));
 			const pxy_brw_mid_usr = new BigNumber(await veFPIS_instance.user_fpis_in_proxy(STAKING_OWNER)).div(BIG18).toNumber();
 			const fpis_bal_contract = new BigNumber(await fpis_instance.balanceOf(veFPIS_instance.address)).div(BIG18).toNumber();
-			veFPIS_table_4_years.push([j, FPIS_supply_mid_usr, veFPIS_balance_mid_usr, slope_mid_usr, bias_mid_usr, total_fpis, total_supply, slope_mid_ttl, bias_mid_ttl, fpis_amt_mid_ttl, pxy_brw_mid_usr, fpis_bal_contract]);
+			const fpis_bal_proxy = new BigNumber(await fpis_instance.balanceOf(GOVERNOR_GUARDIAN_ADDRESS)).div(BIG18).toNumber();
+			veFPIS_table_4_years.push([j, FPIS_supply_mid_usr, veFPIS_balance_mid_usr, slope_mid_usr, bias_mid_usr, total_fpis, total_supply, slope_mid_ttl, bias_mid_ttl, fpis_amt_mid_ttl, pxy_brw_mid_usr, fpis_bal_contract, fpis_bal_proxy]);
 
 			await time.increase(INTERVAL_AMOUNT_4_YR);
 			await time.advanceBlock();
@@ -245,7 +251,7 @@ contract('veFPIS Tests', async (accounts) => {
 				// Transfer
 				console.log(chalk.yellow("STAKER TRANSFERS TO PROXY"));
 				await veFPIS_instance.transfer_to_proxy(STAKING_OWNER, deposit_amount_withdraw_increment_e18_4_yr_PXY_TX_TO, { from: GOVERNOR_GUARDIAN_ADDRESS })
-				veFPIS_table_4_years_PXY_TX_TO.push(["-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX"]);
+				veFPIS_table_4_years_PXY_TX_TO.push(["-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-"]);
 				await veFPIS_instance.checkpoint();
 			}
 
@@ -259,11 +265,11 @@ contract('veFPIS Tests', async (accounts) => {
 				await fpis_instance.approve(veFPIS_instance.address, user_fpis_in_proxy_bn, { from: GOVERNOR_GUARDIAN_ADDRESS });
 				await veFPIS_instance.proxy_pbk_liq_slsh(STAKING_OWNER, user_fpis_in_proxy_bn, 0, 0, 0, { from: GOVERNOR_GUARDIAN_ADDRESS })
 
-				veFPIS_table_4_years_PXY_TX_TO.push(["-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK"]);
+				veFPIS_table_4_years_PXY_TX_TO.push(["-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-"]);
 			}
 
 			if (j == (49)) {
-				veFPIS_table_4_years_PXY_TX_TO.push(["-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY"]);
+				veFPIS_table_4_years_PXY_TX_TO.push(["-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-"]);
 			}
 
 			// Payback half of the remaining, after expiry (25% of original amt borrowed)
@@ -276,7 +282,7 @@ contract('veFPIS Tests', async (accounts) => {
 				await fpis_instance.approve(veFPIS_instance.address, user_fpis_in_proxy_bn, { from: GOVERNOR_GUARDIAN_ADDRESS });
 				await veFPIS_instance.proxy_pbk_liq_slsh(STAKING_OWNER, user_fpis_in_proxy_bn, 0, 0, 0, { from: GOVERNOR_GUARDIAN_ADDRESS })
 
-				veFPIS_table_4_years_PXY_TX_TO.push(["-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK"]);
+				veFPIS_table_4_years_PXY_TX_TO.push(["-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-"]);
 			}
 
 			// Payback all the remaining, after expiry (25% of original amt borrowed)
@@ -289,7 +295,7 @@ contract('veFPIS Tests', async (accounts) => {
 				await fpis_instance.approve(veFPIS_instance.address, user_fpis_in_proxy_bn, { from: GOVERNOR_GUARDIAN_ADDRESS });
 				await veFPIS_instance.proxy_pbk_liq_slsh(STAKING_OWNER, user_fpis_in_proxy_bn, 0, 0, 0, { from: GOVERNOR_GUARDIAN_ADDRESS })
 
-				veFPIS_table_4_years_PXY_TX_TO.push(["-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK"]);
+				veFPIS_table_4_years_PXY_TX_TO.push(["-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-", "PXY PYBCK", "-"]);
 			}
 
 			// Withdraw at the end
@@ -301,7 +307,7 @@ contract('veFPIS Tests', async (accounts) => {
 				// Withdraw
 				await veFPIS_instance.withdraw({ from: STAKING_OWNER });
 				await veFPIS_instance.checkpoint();
-				veFPIS_table_4_years_PXY_TX_TO.push(["-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL"]);
+				veFPIS_table_4_years_PXY_TX_TO.push(["-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-"]);
 
 				// Print contract FPIS balance
 				const FPIS_bal_contract_after = parseFloat(new BigNumber(await fpis_instance.balanceOf(veFPIS_instance.address)).div(BIG18).toNumber().toFixed(4));
@@ -321,7 +327,8 @@ contract('veFPIS Tests', async (accounts) => {
 			const fpis_amt_mid_ttl = parseFloat(new BigNumber(last_point_ttl.fpis_amt).div(BIG18).toNumber().toFixed(4));
 			const pxy_brw_mid_usr = new BigNumber(await veFPIS_instance.user_fpis_in_proxy(STAKING_OWNER)).div(BIG18).toNumber();
 			const fpis_bal_contract = new BigNumber(await fpis_instance.balanceOf(veFPIS_instance.address)).div(BIG18).toNumber();
-			veFPIS_table_4_years_PXY_TX_TO.push([j, FPIS_supply_mid_usr, veFPIS_balance_mid_usr, slope_mid_usr, bias_mid_usr, total_fpis, total_supply, slope_mid_ttl, bias_mid_ttl, fpis_amt_mid_ttl, pxy_brw_mid_usr, fpis_bal_contract]);
+			const fpis_bal_proxy = new BigNumber(await fpis_instance.balanceOf(GOVERNOR_GUARDIAN_ADDRESS)).div(BIG18).toNumber();
+			veFPIS_table_4_years_PXY_TX_TO.push([j, FPIS_supply_mid_usr, veFPIS_balance_mid_usr, slope_mid_usr, bias_mid_usr, total_fpis, total_supply, slope_mid_ttl, bias_mid_ttl, fpis_amt_mid_ttl, pxy_brw_mid_usr, fpis_bal_contract, fpis_bal_proxy]);
 
 			await time.increase(INTERVAL_AMOUNT_4_YR_PXY_TX_TO);
 			await time.advanceBlock();
@@ -347,8 +354,8 @@ contract('veFPIS Tests', async (accounts) => {
 		await veFPIS_instance.stakerSetProxy(GOVERNOR_GUARDIAN_ADDRESS, { from: STAKING_OWNER });
 
 		// Create a new veFPIS table
-		const head_col_titles_2 = ['Month', 'User FPIS', 'User veFPIS', 'User Slope', 'User Bias', 'Ttl FPIS', 'Ttl veFPIS', 'Ttl Slope', 'Ttl Bias', 'Ttl fpis_amt', 'Pxy Brw', 'FPIS BalOf'];
-		const head_col_widths_2 = [8, 15, 15, 15, 15, 12, 15, 15, 15, 15, 9, 15];
+		const head_col_titles_2 = ['Month', 'User FPIS', 'User veFPIS', 'User Slope', 'User Bias', 'Ttl FPIS', 'Ttl veFPIS', 'Ttl Slope', 'Ttl Bias', 'Ttl fpis_amt', 'Pxy Brw', 'veFPIS BlOf FPIS', 'Pxy BlOf FPIS'];
+		const head_col_widths_2 = [8, 15, 15, 15, 15, 12, 15, 15, 15, 15, 9, 18, 15];
 		const veFPIS_table_4_years_PXY_TX_AND_LIQ = new Table({
 			head: head_col_titles_2, 
 			colWidths: head_col_widths_2
@@ -356,7 +363,8 @@ contract('veFPIS Tests', async (accounts) => {
 
 		const deposit_amount_quick_e18_4_yr_PXY_TX_AND_LIQ = new BigNumber(`1000e18`);
 		const deposit_amount_withdraw_increment_e18_4_yr_PXY_TX_AND_LIQ = new BigNumber(`100e18`);
-		const deposit_amount_liq_e18_4_yr_PXY_TX_AND_LIQ = new BigNumber(`100e18`);
+		const deposit_initial_amount_liq_e18_4_yr_PXY_TX_AND_LIQ = new BigNumber(`200e18`);
+		const liq_amount_e18_4_yr_PXY_TX_AND_LIQ = new BigNumber(`100e18`);
 
 		const deposit_quick_days_4_yr_PXY_TX_AND_LIQ = 4 * 365 ; // 4 years
 		const LOOP_MAX_4_YR_PXY_TX_AND_LIQ = 54; // Should end after 48.67 Loops
@@ -381,21 +389,35 @@ contract('veFPIS Tests', async (accounts) => {
 			if (j == 6) {
 				console.log(`In loop #${j}`);
 				// Transfer
-				await veFPIS_instance.transfer_to_proxy(STAKING_OWNER, deposit_amount_withdraw_increment_e18_4_yr_PXY_TX_AND_LIQ, { from: GOVERNOR_GUARDIAN_ADDRESS })
-				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX"]);
+				await veFPIS_instance.transfer_to_proxy(STAKING_OWNER, deposit_initial_amount_liq_e18_4_yr_PXY_TX_AND_LIQ, { from: GOVERNOR_GUARDIAN_ADDRESS })
+				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-", "PXY TX", "-"]);
 				await veFPIS_instance.checkpoint();
 			}
 
-			// Liquidate every 10 instances, skipping the first
+			// Liquidate half after 10 instances, skipping the first
 			// 10% fee
-			if ((((j + 1) % 10) == 0) && (j < (LOOP_MAX_4_YR_PXY_TX_AND_LIQ - 10))) {
+			if (j == 10) {
 				console.log(`In loop #${j}`);
+				// Approve first
+				await fpis_instance.approve(veFPIS_instance.address, liq_amount_e18_4_yr_PXY_TX_AND_LIQ, { from: GOVERNOR_GUARDIAN_ADDRESS });
+
 				// Liquidate
-				const liq_fee = deposit_amount_liq_e18_4_yr_PXY_TX_AND_LIQ.multipliedBy(0.1); // 10% fee for testing
-				await veFPIS_instance.proxy_pbk_liq_slsh(STAKING_OWNER, 0, deposit_amount_liq_e18_4_yr_PXY_TX_AND_LIQ, liq_fee, 0, { from: GOVERNOR_GUARDIAN_ADDRESS })
-				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ"]);
+				const liq_fee = liq_amount_e18_4_yr_PXY_TX_AND_LIQ.multipliedBy(0.1); // 10% fee for testing
+				await veFPIS_instance.proxy_pbk_liq_slsh(STAKING_OWNER, 0, liq_amount_e18_4_yr_PXY_TX_AND_LIQ, liq_fee, 0, { from: GOVERNOR_GUARDIAN_ADDRESS })
+				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ", "-"]);
 				await veFPIS_instance.checkpoint();
 			}
+
+			// // Liquidate every 10 instances, skipping the first
+			// // 10% fee
+			// if ((((j + 1) % 10) == 0) && (j < (LOOP_MAX_4_YR_PXY_TX_AND_LIQ - 10))) {
+			// 	console.log(`In loop #${j}`);
+			// 	// Liquidate
+			// 	const liq_fee = liq_amount_e18_4_yr_PXY_TX_AND_LIQ.multipliedBy(0.1); // 10% fee for testing
+			// 	await veFPIS_instance.proxy_pbk_liq_slsh(STAKING_OWNER, 0, liq_amount_e18_4_yr_PXY_TX_AND_LIQ, liq_fee, 0, { from: GOVERNOR_GUARDIAN_ADDRESS })
+			// 	veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ", "-", "PXY LIQ"]);
+			// 	await veFPIS_instance.checkpoint();
+			// }
 
 			// Payback first half before the end (50% of borrow)
 			if (j == 45) {
@@ -408,11 +430,11 @@ contract('veFPIS Tests', async (accounts) => {
 				await fpis_instance.approve(veFPIS_instance.address, user_fpis_in_proxy_bn, { from: GOVERNOR_GUARDIAN_ADDRESS });
 				await veFPIS_instance.proxy_pbk_liq_slsh(STAKING_OWNER, user_fpis_in_proxy_bn, 0, 0, 0, { from: GOVERNOR_GUARDIAN_ADDRESS })
 
-				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY PYBK 1/2", "-", "PXY PYBK 1/2", "-", "PXY PYBK 1/2", "-", "PXY PYBK 1/2", "-", "PXY PYBK 1/2", "-", "PXY PYBK 1/2"]);
+				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY PYBK 1/2", "-", "PXY PYBK 1/2", "-", "PXY PYBK 1/2", "-", "PXY PYBK 1/2", "-", "PXY PYBK 1/2", "-", "PXY PYBK 1/2", "-"]);
 			}
 
 			if (j == (49)) {
-				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY"]);
+				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-", "EXPIRY", "-"]);
 			}
 
 			// Liquidate half after the end (25% of borrow)
@@ -427,7 +449,7 @@ contract('veFPIS Tests', async (accounts) => {
 				await fpis_instance.approve(veFPIS_instance.address, user_fpis_in_proxy_bn, { from: GOVERNOR_GUARDIAN_ADDRESS });
 				await veFPIS_instance.proxy_pbk_liq_slsh(STAKING_OWNER, 0, user_fpis_in_proxy_bn, liq_fee, 0, { from: GOVERNOR_GUARDIAN_ADDRESS })
 				
-				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY LIQ 1/4", "-", "PXY LIQ 1/4", "-", "PXY LIQ 1/4", "-", "PXY LIQ 1/4", "-", "PXY LIQ 1/4", "-", "PXY LIQ 1/4"]);
+				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY LIQ 1/4", "-", "PXY LIQ 1/4", "-", "PXY LIQ 1/4", "-", "PXY LIQ 1/4", "-", "PXY LIQ 1/4", "-", "PXY LIQ 1/4", "-"]);
 			}
 
 			// Payback leftovers after the end (25% of borrow)
@@ -442,7 +464,7 @@ contract('veFPIS Tests', async (accounts) => {
 				await fpis_instance.approve(veFPIS_instance.address, user_fpis_in_proxy_bn, { from: GOVERNOR_GUARDIAN_ADDRESS });
 				await veFPIS_instance.proxy_pbk_liq_slsh(STAKING_OWNER, user_fpis_in_proxy_bn, 0, 0, 0, { from: GOVERNOR_GUARDIAN_ADDRESS })
 
-				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY PYBK RMNDR", "-", "PXY PYBK RMNDR", "-", "PXY PYBK RMNDR", "-", "PXY PYBK RMNDR", "-", "PXY PYBK RMNDR", "-", "PXY PYBK RMNDR"]);
+				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "PXY PYBK RMNDR", "-", "PXY PYBK RMNDR", "-", "PXY PYBK RMNDR", "-", "PXY PYBK RMNDR", "-", "PXY PYBK RMNDR", "-", "PXY PYBK RMNDR", "-"]);
 			}
 
 			// Withdraw at the end
@@ -454,7 +476,7 @@ contract('veFPIS Tests', async (accounts) => {
 				// Withdraw
 				await veFPIS_instance.withdraw({ from: STAKING_OWNER });
 				await veFPIS_instance.checkpoint();
-				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL"]);
+				veFPIS_table_4_years_PXY_TX_AND_LIQ.push(["-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-"]);
 			
 				// Print contract FPIS balance
 				const FPIS_bal_contract_after = parseFloat(new BigNumber(await fpis_instance.balanceOf(veFPIS_instance.address)).div(BIG18).toNumber().toFixed(4));
@@ -474,7 +496,8 @@ contract('veFPIS Tests', async (accounts) => {
 			const fpis_amt_mid_ttl = parseFloat(new BigNumber(last_point_ttl.fpis_amt).div(BIG18).toNumber().toFixed(4));
 			const pxy_brw_mid_usr = new BigNumber(await veFPIS_instance.user_fpis_in_proxy(STAKING_OWNER)).div(BIG18).toNumber();
 			const fpis_bal_contract = new BigNumber(await fpis_instance.balanceOf(veFPIS_instance.address)).div(BIG18).toNumber();
-			veFPIS_table_4_years_PXY_TX_AND_LIQ.push([j, FPIS_supply_mid_usr, veFPIS_balance_mid_usr, slope_mid_usr, bias_mid_usr, total_fpis, total_supply, slope_mid_ttl, bias_mid_ttl, fpis_amt_mid_ttl, pxy_brw_mid_usr, fpis_bal_contract]);
+			const fpis_bal_proxy = new BigNumber(await fpis_instance.balanceOf(GOVERNOR_GUARDIAN_ADDRESS)).div(BIG18).toNumber();
+			veFPIS_table_4_years_PXY_TX_AND_LIQ.push([j, FPIS_supply_mid_usr, veFPIS_balance_mid_usr, slope_mid_usr, bias_mid_usr, total_fpis, total_supply, slope_mid_ttl, bias_mid_ttl, fpis_amt_mid_ttl, pxy_brw_mid_usr, fpis_bal_contract, fpis_bal_proxy]);
 
 			await time.increase(INTERVAL_AMOUNT_4_YR_PXY_TX_AND_LIQ);
 			await time.advanceBlock();
@@ -565,8 +588,8 @@ contract('veFPIS Tests', async (accounts) => {
 		await veFPIS_instance.checkpoint();
 
 		// Create a new veFPIS table
-		const head_col_titles_days = ['Day', 'User FPIS', 'User veFPIS', 'User Slope', 'User Bias', 'Ttl FPIS', 'Ttl veFPIS', 'Ttl Slope', 'Ttl Bias', 'Ttl fpis_amt', 'Pxy Brw', 'FPIS Ctc BlOf'];
-		const head_col_widths_days = [8, 15, 15, 15, 15, 12, 15, 15, 15, 15, 9, 15];
+		const head_col_titles_days = ['Day', 'User FPIS', 'User veFPIS', 'User Slope', 'User Bias', 'Ttl FPIS', 'Ttl veFPIS', 'Ttl Slope', 'Ttl Bias', 'Ttl fpis_amt', 'Pxy Brw', 'veFPIS BlOf FPIS', 'Pxy BlOf FPIS'];
+		const head_col_widths_days = [8, 15, 15, 15, 15, 12, 15, 15, 15, 15, 9, 18, 15];
 		const veFPIS_table_30_day = new Table({
 			head: head_col_titles_days, 
 			colWidths: head_col_widths_days
@@ -599,7 +622,7 @@ contract('veFPIS Tests', async (accounts) => {
 				// Withdraw
 				await veFPIS_instance.withdraw({ from: STAKING_OWNER });
 				await veFPIS_instance.checkpoint();
-				veFPIS_table_30_day.push(["-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL"]);
+				veFPIS_table_30_day.push(["-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-", "WITHDRAWAL", "-"]);
 			}
 
 			const FPIS_supply_mid_usr = new BigNumber(await veFPIS_instance.locked__amount(STAKING_OWNER)).div(BIG18).toNumber();
@@ -615,7 +638,8 @@ contract('veFPIS Tests', async (accounts) => {
 			const fpis_amt_mid_ttl = parseFloat(new BigNumber(last_point_ttl.fpis_amt).div(BIG18).toNumber().toFixed(4));
 			const pxy_brw_mid_usr = new BigNumber(await veFPIS_instance.user_fpis_in_proxy(STAKING_OWNER)).div(BIG18).toNumber();
 			const fpis_bal_contract = new BigNumber(await fpis_instance.balanceOf(veFPIS_instance.address)).div(BIG18).toNumber();
-			veFPIS_table_30_day.push([j, FPIS_supply_mid_usr, veFPIS_balance_mid_usr, slope_mid_usr, bias_mid_usr, total_fpis, total_supply, slope_mid_ttl, bias_mid_ttl, fpis_amt_mid_ttl, pxy_brw_mid_usr, fpis_bal_contract]);
+			const fpis_bal_proxy = new BigNumber(await fpis_instance.balanceOf(veFPIS_instance.address)).div(BIG18).toNumber();
+			veFPIS_table_30_day.push([j, FPIS_supply_mid_usr, veFPIS_balance_mid_usr, slope_mid_usr, bias_mid_usr, total_fpis, total_supply, slope_mid_ttl, bias_mid_ttl, fpis_amt_mid_ttl, pxy_brw_mid_usr, fpis_bal_contract, fpis_bal_proxy]);
 
 			await time.increase(INTERVAL_AMOUNT_30_DAYS);
 			await time.advanceBlock();
@@ -1228,7 +1252,7 @@ contract('veFPIS Tests', async (accounts) => {
 		console.log("---------TRY TO LIQUIDATE TOO MUCH [PROXY]---------");
 		await expectRevert(
 			veFPIS_instance.proxy_pbk_liq_slsh(STAKING_OWNER, 0, test_amount_1_increment.multipliedBy(1000), test_amount_1_liq_fee_amt, 0, { from: GOVERNOR_GUARDIAN_ADDRESS }),
-			"Cannot withdraw more than the user has"
+			"Trying to pay back too much"
 		);
 
 		console.log(chalk.yellow("PROXY LIQUIDATES A SMALL AMOUNT"));

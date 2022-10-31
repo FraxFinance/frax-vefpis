@@ -34,10 +34,11 @@
 
 # Frax Reviewer(s) / Contributor(s)
 # Dennis: https://github.com/denett
+# Jamie Turley: https://github.com/jyturley
 # Drake Evans: https://github.com/DrakeEvans
 # Rich Gee: https://github.com/zer0blockchain
 # Sam Kazemian: https://github.com/samkazemian
-# Jack Corddry: https://github.com/corddry
+
 
 # Voting escrow to have time-weighted votes
 # Votes have a weight depending on time, so that users are committed
@@ -83,15 +84,15 @@ interface ERC20:
 interface SmartWalletChecker:
     def check(addr: address) -> bool: nonpayable
 
-# Some constants
-DEPOSIT_FOR_TYPE: constant(int128) = 0
-CREATE_LOCK_TYPE: constant(int128) = 1
-INCREASE_LOCK_AMOUNT: constant(int128) = 2
-INCREASE_UNLOCK_TIME: constant(int128) = 3
-USER_WITHDRAW: constant(int128) = 4
-PROXY_TRANSFER: constant(int128) = 5
-PROXY_PAYBACK: constant(int128) = 6
-PROXY_LIQUIDATION: constant(int128) = 7
+# Flags
+CREATE_LOCK_TYPE: constant(int128) = 0
+INCREASE_LOCK_AMOUNT: constant(int128) = 1
+INCREASE_UNLOCK_TIME: constant(int128) = 2
+USER_WITHDRAW: constant(int128) = 3
+PROXY_TRANSFER: constant(int128) = 4
+PROXY_NON_LIQ_PAYBACK: constant(int128) = 5
+PROXY_LIQ_PAYBACK: constant(int128) = 6
+PROXY_LIQ_FEE: constant(int128) = 7
 PROXY_SLASH: constant(int128) = 8
 
 event CommitOwnership:
@@ -398,6 +399,7 @@ def _checkpoint(addr: address, old_locked: LockedBalance, new_locked: LockedBala
     @param addr User's wallet address. No user checkpoint if 0x0
     @param old_locked Previous locked amount / end lock time for the user
     @param new_locked New locked amount / end lock time for the user
+    @param flag Used for downstream logic
     """
     usr_old_pt: Point = empty(Point)
     usr_new_pt: Point = empty(Point)
@@ -530,7 +532,7 @@ def _checkpoint(addr: address, old_locked: LockedBalance, new_locked: LockedBala
             last_point.fpis_amt -= convert(old_locked.amount - new_locked.amount, uint256)
 
             # Subtract the bias if you are liquidating after expiry
-            if ((flag == PROXY_LIQUIDATION or flag == PROXY_SLASH) and (new_locked.end < block.timestamp)):
+            if ((flag == PROXY_LIQ_FEE or flag == PROXY_SLASH) and (new_locked.end < block.timestamp)):
                 last_point.bias -= old_locked.amount
 
             # Remove the offset
@@ -585,7 +587,7 @@ def _checkpoint(addr: address, old_locked: LockedBalance, new_locked: LockedBala
 
 
 @internal
-def _deposit_for(_staker_addr: address, _payer_addr: address, _value: uint256, unlock_time: uint256, locked_balance: LockedBalance, type: int128):
+def _deposit_for(_staker_addr: address, _payer_addr: address, _value: uint256, unlock_time: uint256, locked_balance: LockedBalance, flag: int128):
     """
     @notice Deposit and lock tokens for a user
     @param _staker_addr User's wallet address
@@ -618,9 +620,9 @@ def _deposit_for(_staker_addr: address, _payer_addr: address, _value: uint256, u
     # Both old_locked.end could be current or expired (>/< block.timestamp)
     # value == 0 (extend lock) or value > 0 (add to lock or extend lock)
     # new_locked.end > block.timestamp (always)
-    self._checkpoint(_staker_addr, old_locked, new_locked, type)
+    self._checkpoint(_staker_addr, old_locked, new_locked, flag)
 
-    log Deposit(_staker_addr, _payer_addr, _value, new_locked.end, type, block.timestamp)
+    log Deposit(_staker_addr, _payer_addr, _value, new_locked.end, flag, block.timestamp)
     log Supply(supply_before, supply_before + _value)
 
 
@@ -726,17 +728,21 @@ def _withdraw(staker_addr: address, addr_out: address, locked_in: LockedBalance,
 @nonreentrant('lock')
 def proxy_pbk_liq_slsh(
     _staker_addr: address, 
-    _payback_amt: uint256, 
-    _liquidation_amt: uint256,
-    _liquidation_fee_amt: uint256,
+    _non_liq_payback_amt: uint256, 
+    _liq_payback_amt: uint256,
+    _liq_fee_amt: uint256,
     _slash_amt: uint256
 ):
     """
-    @notice Proxy pays back `_staker_addr`'s loan and increases the veFPIS base / bias. Proxy can also slash
-    @dev Also optionally liquidates or slashes part of the staker's core veFPIS position
-    @dev E.g. $10K loan is now worth $8K and staker wants to close it out (or the proxy wants to liquidate it)
-    @dev Then call with _payback_amt = $8K and _liquidation_amt = $2K
-    @dev Usually triggered by the staker at the dapp level
+    @notice Proxy pays back `_staker_addr`'s loan and increases the veFPIS base / bias. 
+    @dev Proxy can also slash for any future / optional reason
+    @dev Also optionally liquidates part of the staker's core veFPIS position, sometimes taking a fee
+    @dev Logic for the proxy is not present in this contract
+    @param _staker_addr The target veFPIS staker address to act on
+    @param _non_liq_payback_amt Payback amount not during a liquidation, for example, if directed by the user
+    @param _liq_payback_amt Payback amount during a liquidation
+    @param _liq_fee_amt Liquidation fee being taken from the user's core balance
+    @param _slash_amt Amount that the proxy is slashing the user
     """
     # Make sure that the function isn't disabled, and also that the proxy is valid
     assert (self.ProxyPaybackLiqOrSlashsEnabled), "Currently disabled"
@@ -749,45 +755,51 @@ def proxy_pbk_liq_slsh(
 
     # Validate some things
     assert _locked.amount > 0, "No existing lock found"
-    assert (_payback_amt + _liquidation_amt) > 0, "Amounts must be non-zero"
+    assert (_non_liq_payback_amt + _liq_payback_amt + _slash_amt) > 0, "Amounts must be non-zero"
 
-    # Handle the payback (returns FPIS back to the user's veFPIS position)
-    if (_payback_amt > 0):
+    # Same code for normal and liquidation paybacks
+    if (_non_liq_payback_amt > 0 or _liq_payback_amt > 0):
         # Make sure there is actually something to pay back
         assert _proxy_balance > 0, "Nothing to pay back for this proxy"
 
         # Cannot pay back more than what was borrowed
-        assert _payback_amt <= _proxy_balance, "Trying to pay back too much"
+        assert (_non_liq_payback_amt + _liq_payback_amt) <= _proxy_balance, "Trying to pay back too much"
 
         # Proxy gives back FPIS
         # NOTE: Proxy needs to approve() to the veFPIS contract first
-        # _staker_addr, _payer_addr, _value, unlock_time, locked_balance, type
-        # self._deposit_for(_staker_addr, msg.sender, _payback_amt, _locked.end, _locked, PROXY_PAYBACK)
-        # self._deposit_for(_staker_addr, msg.sender, _payback_amt, 0, _locked, PROXY_PAYBACK)
-        assert ERC20(self.token).transferFrom(msg.sender, self, _payback_amt)
-
-        # Checkpoint
-        # Amount doesn't change
-        self._checkpoint(_staker_addr, _locked, _locked, PROXY_PAYBACK)
+        assert ERC20(self.token).transferFrom(msg.sender, self, _non_liq_payback_amt + _liq_payback_amt)
 
         # Lower the loaned balance 
-        self.user_fpis_in_proxy[_staker_addr] -= _payback_amt
+        self.user_fpis_in_proxy[_staker_addr] -= (_non_liq_payback_amt + _liq_payback_amt)
 
-        # Refresh the locked and proxy balances
+    # Handle the normal payback checkpoint
+    if (_non_liq_payback_amt > 0):
+        # Checkpoint
+        self._checkpoint(_staker_addr, _locked, _locked, PROXY_NON_LIQ_PAYBACK)
+
+    # Handle a liquidation
+    # Proxy closes part or all of the user's position 
+    # and takes a fee from the user's core position to cover the market loss
+    if (_liq_fee_amt > 0): 
+        # Checkpoint
+        self._checkpoint(_staker_addr, _locked, _locked, PROXY_LIQ_PAYBACK)
+
+        # Refresh the _locked for the fee
         _locked = self.locked[_staker_addr]
 
-    # Handle a liquidation (proxy takes FPIS from the user's veFPIS position)
-    if (_liquidation_fee_amt > 0 or _liquidation_amt > 0): 
-        # Withdraw the amount to liquidate from the staker's core position and give it to the proxy
-        # Also add the fee, if any
-        self._withdraw(_staker_addr, msg.sender, _locked, convert(_liquidation_amt + _liquidation_fee_amt, int128), PROXY_LIQUIDATION)
+        # Withdraw the fee from the staker's core position and give it to the proxy
+        self._withdraw(_staker_addr, msg.sender, _locked, convert(_liq_fee_amt, int128), PROXY_LIQ_FEE)
     
+        # Refresh the _locked in case there is a slash later
+        _locked = self.locked[_staker_addr]
+
     # Handle a slash (proxy takes FPIS from the user's veFPIS position)
     if (_slash_amt > 0): 
         # Withdraw the amount to slash from the staker's core position and give it to the proxy
+        # Proxy will own this amount now
         self._withdraw(_staker_addr, msg.sender, _locked, convert(_slash_amt, int128), PROXY_SLASH)
 
-    log ProxyPaybackLiqOrSlash(_staker_addr, msg.sender, _payback_amt, _liquidation_amt, _liquidation_fee_amt, _slash_amt)
+    log ProxyPaybackLiqOrSlash(_staker_addr, msg.sender, _non_liq_payback_amt, _liq_payback_amt, _liq_fee_amt, _slash_amt)
 
 
 @external
@@ -1045,8 +1057,6 @@ def totalSupplyAt(_block: uint256) -> uint256:
     # Now dt contains info on how far are we beyond point
 
     return self.supply_at(point, point.ts + dt)
-
-# Dummy methods for compatibility with Aragon
 
 @external
 @view
