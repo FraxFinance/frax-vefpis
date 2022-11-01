@@ -170,3 +170,6 @@ src/hardhat/artifacts
 
 # IntelliJ
 .idea
+
+# Code counter
+.VSCodeCounter
