@@ -32,7 +32,7 @@ Copy & paste the entire .vy file. Etherscan should support it
 
 **---Flat File Compiling (Used as a backup for manual source code verification)---**
 cd ./src/hardhat
-```npx hardhat flatten ./contracts/FPI/FPIS.sol > ./flattened.sol```
+```npx hardhat flatten ./contracts/<SUBFOLDER>/<FILENAME>.sol > ./flattened.sol```
 
 sed -i '/SPDX-License-Identifier/d' ./flattened.sol
 sed -i '/pragma solidity/d' ./flattened.sol
@@ -58,7 +58,7 @@ The underlying token being staked. Behaves as a normal ERC20.
 # Contest Scope
 - veFPIS Repository: [https://github.com/FraxFinance/frax-vefpis.git](https://github.com/FraxFinance/frax-vefpis.git)
 - 1 Non-library contracts in the scope
-- 548 Total sLoC in scope.
+- 546 Total sLoC in scope.
 - No novel or unique curve logic or mathematical models
 - Not an NFT
 - Not an AMM

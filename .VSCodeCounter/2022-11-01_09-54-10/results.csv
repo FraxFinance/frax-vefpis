@@ -1,0 +1,25 @@
+"filename", "language", "Markdown", "JavaScript", "TypeScript", "JSON", "JSON with Comments", "XML", "Solidity", "Vyper", "comment", "blank", "total"
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/README.md", "Markdown", 48, 0, 0, 0, 0, 0, 0, 0, 5, 14, 67
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/package-lock.json", "JSON", 0, 0, 0, 57219, 0, 0, 0, 0, 0, 1, 57220
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/package.json", "JSON", 0, 0, 0, 89, 0, 0, 0, 0, 0, 1, 90
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/Common/Context.sol", "Solidity", 0, 0, 0, 0, 0, 0, 10, 0, 11, 2, 23
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/Common/Owned.sol", "Solidity", 0, 0, 0, 0, 0, 0, 26, 0, 2, 6, 34
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/Curve/veFPIS.vy", "Vyper", 0, 0, 0, 0, 0, 0, 0, 546, 408, 202, 1156
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/ERC20/ERC20.sol", "Solidity", 0, 0, 0, 0, 0, 0, 99, 0, 199, 38, 336
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/ERC20/ERC20PermissionedMint.sol", "Solidity", 0, 0, 0, 0, 0, 0, 62, 0, 13, 22, 97
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/ERC20/IERC20.sol", "Solidity", 0, 0, 0, 0, 0, 0, 13, 0, 58, 11, 82
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/FPI/FPIS.sol", "Solidity", 0, 0, 0, 0, 0, 0, 21, 0, 25, 16, 62
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/Math/Babylonian.sol", "Solidity", 0, 0, 0, 0, 0, 0, 15, 0, 4, 1, 20
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/Math/Math.sol", "Solidity", 0, 0, 0, 0, 0, 0, 24, 0, 16, 4, 44
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/Math/SafeMath.sol", "Solidity", 0, 0, 0, 0, 0, 0, 39, 0, 105, 13, 157
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/Utils/Address.sol", "Solidity", 0, 0, 0, 0, 0, 0, 58, 0, 113, 17, 188
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/contracts/Utils/ReentrancyGuard.sol", "Solidity", 0, 0, 0, 0, 0, 0, 15, 0, 38, 8, 61
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/hardhat.config.js", "JavaScript", 0, 171, 0, 0, 0, 0, 0, 0, 7, 9, 187
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/scripts/deploys/deploy_veFPIS.js", "JavaScript", 0, 37, 0, 0, 0, 0, 0, 0, 3, 8, 48
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/test/truffle-fixture.js", "JavaScript", 0, 30, 0, 0, 0, 0, 0, 0, 13, 12, 55
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/hardhat/test/veFPIS-Tests.js", "JavaScript", 0, 891, 0, 0, 0, 0, 0, 0, 143, 262, 1296
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/misc/utilities.ts", "TypeScript", 0, 0, 26, 0, 0, 0, 0, 0, 2, 3, 31
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/src/types/constants.ts", "TypeScript", 0, 0, 22, 0, 0, 0, 0, 0, 0, 6, 28
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/tsconfig.json", "JSON with Comments", 0, 0, 0, 0, 29, 0, 0, 0, 0, 1, 30
+"/home/travis/Documents/Ubuntu_Shared/frax-vefpis/veFPIS.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
+"Total", "-", 48, 1129, 48, 57308, 29, 1, 382, 546, 1165, 657, 61313

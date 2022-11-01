@@ -39,7 +39,6 @@
 # Rich Gee: https://github.com/zer0blockchain
 # Sam Kazemian: https://github.com/samkazemian
 
-
 # Voting escrow to have time-weighted votes
 # Votes have a weight depending on time, so that users are committed
 # to the future of (whatever they are voting for).
@@ -777,15 +776,14 @@ def proxy_pbk_liq_slsh(
         # Checkpoint
         self._checkpoint(_staker_addr, _locked, _locked, PROXY_NON_LIQ_PAYBACK)
 
-    # Handle a liquidation
-    # Proxy closes part or all of the user's position 
-    # and takes a fee from the user's core position to cover the market loss
+    # Handle liquidation fee
+    # Proxy takes a fee from the user's core position
     if (_liq_fee_amt > 0): 
-        # Checkpoint
-        self._checkpoint(_staker_addr, _locked, _locked, PROXY_LIQ_PAYBACK)
+        # # Checkpoint
+        # self._checkpoint(_staker_addr, _locked, _locked, PROXY_LIQ_PAYBACK)
 
-        # Refresh the _locked for the fee
-        _locked = self.locked[_staker_addr]
+        # # Refresh the _locked for the fee
+        # _locked = self.locked[_staker_addr]
 
         # Withdraw the fee from the staker's core position and give it to the proxy
         self._withdraw(_staker_addr, msg.sender, _locked, convert(_liq_fee_amt, int128), PROXY_LIQ_FEE)
