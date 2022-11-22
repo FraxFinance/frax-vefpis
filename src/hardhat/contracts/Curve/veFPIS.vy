@@ -837,8 +837,13 @@ def transfer_to_proxy(_staker_addr: address, _transfer_amt: int128):
     # Make sure the position isn't expired
     assert (block.timestamp < _locked.end), "No transfers after expiration"
 
-    # Note the amount moved to the proxy 
     _value: uint256 = convert(_transfer_amt, uint256)
+    _locked_amt: uint256 = convert(_locked.amount, uint256)
+
+    # Make sure total user transfers do not surpass user locked balance
+    assert (_value + self.user_fpis_in_proxy[_staker_addr] <= _locked_amt), "Amount exceeds locked balance"
+
+    # Note the amount moved to the proxy 
     self.user_fpis_in_proxy[_staker_addr] += _value
 
     # Allow the transfer to the proxy.
